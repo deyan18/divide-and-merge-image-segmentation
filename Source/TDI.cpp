@@ -27,6 +27,7 @@ void fusionar();
 int nNodo = 0;
 int PORCENTAJEPERMITIDO = 10; //Porcentaje de fallos permitido en el metodo "uniforme"
 int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
+int LIMITE = 1; //Limite para la division de pixeles
 
 //DEBUG
 void dividirSimple(region* nodo);
@@ -66,15 +67,13 @@ int main(int argc, char** argv)
 void dividir(region* nodo) {
 
 	//DEBUG
-	/*
-	int limite = 5;
-	if (((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) < limite) {
+	if (((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) < LIMITE) {
 		printf("LIMITE Nodo:%i	%i - %i = %i\n", (*nodo).num, (*nodo).mat.LastRow(), (*nodo).mat.FirstRow(), (*nodo).mat.LastRow() - (*nodo).mat.FirstRow());
 		return;
-	}if (((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) < limite) {
+	}if (((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) < LIMITE) {
 		printf("LIMITE Nodo:%i	%i - %i = %i\n", (*nodo).num, (*nodo).mat.LastCol(), (*nodo).mat.FirstCol(), (*nodo).mat.LastCol() - (*nodo).mat.FirstCol());
 		return;
-	}*/
+	}
 
 
 	if ((*nodo).homogeneo == -1)
@@ -250,12 +249,19 @@ void exportar(region* nodo) {
 bool uniforme(region* nodo) {
 	int muestra = (*nodo).mat.Mean(); //media
 	int fallos = 0;
-	int pixeles = ((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) * ((*nodo).mat.LastCol() - (*nodo).mat.FirstCol());
+	int pixeles = ((*nodo).mat.LastRow() - (*nodo).mat.FirstRow() +1) * ((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()+1);
 
 	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
 		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
-			if ((*nodo).mat(row, col) < (muestra - RANGOFALLO) || (*nodo).mat(row, col) > (muestra + RANGOFALLO))
+			if ((*nodo).mat(row, col) < (muestra - RANGOFALLO) || (*nodo).mat(row, col) > (muestra + RANGOFALLO)) {
 				fallos++;
+				
+				//DEBUG
+				if((*nodo).num == 23)
+					printf("Fallo en pixel (%i, %i)", row, col);
+				
+			}
+				
 		}
 	}
 
@@ -264,13 +270,16 @@ bool uniforme(region* nodo) {
 	int porcentajeFallos = ((double)fallos / pixeles) * 100;
 
 	//DEBUG
-	printf("Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
+	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
 
 
-	if (porcentajeFallos > PORCENTAJEPERMITIDO)
+	if (porcentajeFallos > PORCENTAJEPERMITIDO) {
 		return false;
-	else
+	}
+	else {
 		return true;
+	}
+		
 
 }
 
