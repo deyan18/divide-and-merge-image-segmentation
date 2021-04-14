@@ -18,16 +18,16 @@ vector<region*> regiones;
 void histograma(C_Image* imagen);
 void inverso(C_Image* imagen);
 void dividir(region* nodo);
-void criterio(region* nodo);
 void exportar(region* nodo);
-bool uniforme(region* nodo);
+void uniforme(region* nodo);
+void parejaUniforme(region* nodo1, region* nodo2);
 bool vecinos(region* nodo1, region* nodo2);
 void fusionar();
 
 int nNodo = 0;
 int PORCENTAJEPERMITIDO = 10; //Porcentaje de fallos permitido en el metodo "uniforme"
 int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
-int LIMITE = 5; //Limite para la division de pixeles
+int LIMITE = 15; //Limite para la division de pixeles
 
 //DEBUG
 void dividirSimple(region* nodo);
@@ -50,10 +50,10 @@ int main(int argc, char** argv)
 	raiz.num = nNodo;
 	raiz.mat = imagen;
 
-	//dividir(&raiz);
+	dividir(&raiz);
 
 	//DEBUG
-	dividirSimple(&raiz);
+	//dividirSimple(&raiz);
 
 	fusionar();
 
@@ -77,7 +77,7 @@ void dividir(region* nodo) {
 
 
 	if ((*nodo).homogeneo == -1)
-		criterio(nodo);
+		uniforme(nodo);
 
 
 	if ((*nodo).homogeneo == 0) {
@@ -160,8 +160,22 @@ void dividir(region* nodo) {
 
 void fusionar() {
 
+	//Recorremos el vector, comprobando por parejas si son vecinos. En el caso de que los sean comprobamos si cumplen el criterio
+	for (int i = 0; i < regiones.size(); i++) {
+		exportar(regiones[i]);
+		for (int j = 0; j < regiones.size(); j++) {
+			if (i != j) {
+				if (vecinos(regiones[i], regiones[j])) {
+					parejaUniforme(regiones[i], regiones[j]);
+				}
+			}
+				
+		}
+		
+	}
+
 	//DEBUG
-	
+	/*
 	int indice = 1;
 	printf("Nodo %i\n", (*regiones[indice]).num);
 	for (int i = 0; i < regiones.size(); i++) {
@@ -169,7 +183,7 @@ void fusionar() {
 		if (vecinos(regiones[i], regiones[indice])) {
 			printf("Vecino con %i\n", (*regiones[i]).num);
 		}
-	}
+	}*/
 
 }
 
@@ -215,28 +229,6 @@ bool vecinos(region* nodo1, region* nodo2) {
 }
 
 
-void criterio(region* nodo) {
-	/*double c = 5;
-	double media = (*nodo).mat.Mean();
-	//DEBUG
-	//printf("\nNum Nodo: %i\nFilas %i - %i \nColumnas %i - %i \nMedia = %f\n", (*nodo).num,(*nodo).mat.FirstRow(), (*nodo).mat.LastRow(),(*nodo).mat.FirstCol(), (*nodo).mat.LastCol(), media);
-	printf("CRITERIO Nodo:%i Media = %f\n", (*nodo).num, media);
-	if (media <= c + 10 && media >= c - 10) {
-		(*nodo).homogeneo = 1;
-	}
-	else */if (uniforme(nodo)) { //comprobamos si toda la región tiene el mismo valor
-		(*nodo).homogeneo = 1;
-	}
-	else {
-		(*nodo).homogeneo = 0;
-	}
-
-	if ((*nodo).homogeneo == 1) {
-		//Si el nodo es homogeneo lo añadimos al vector de regiones homogeneas
-		regiones.push_back(nodo);
-	}
-}
-
 void exportar(region* nodo) {
 	C_Image salida((*nodo).mat);
 	C_Image::IndexT row, col;
@@ -247,7 +239,7 @@ void exportar(region* nodo) {
 }
 
 //Comprueba si una region es de color más o menos uniforme dentro de un rango
-bool uniforme(region* nodo) {
+void uniforme(region* nodo) {
 	int muestra = (*nodo).mat.Mean(); //media
 	int fallos = 0;
 	int pixeles = ((*nodo).mat.LastRow() - (*nodo).mat.FirstRow() +1) * ((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()+1);
@@ -256,33 +248,69 @@ bool uniforme(region* nodo) {
 		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
 			if ((*nodo).mat(row, col) < (muestra - RANGOFALLO) || (*nodo).mat(row, col) > (muestra + RANGOFALLO)) {
 				fallos++;
-				
-				//DEBUG
-				if((*nodo).num == 23)
-					printf("Fallo en pixel (%i, %i)", row, col);
-				
 			}
-				
 		}
 	}
-
-
 
 	int porcentajeFallos = ((double)fallos / pixeles) * 100;
 
 	//DEBUG
 	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
 
-
 	if (porcentajeFallos > PORCENTAJEPERMITIDO) {
-		return false;
+		(*nodo).homogeneo = 0; //Indicamos que no es uniforme
 	}
 	else {
-		return true;
+		//Si el nodo es homogeneo lo añadimos al vector de regiones homogeneas
+		(*nodo).homogeneo = 1; //Indicamos que es uniforme
+		regiones.push_back(nodo);
 	}
-		
-
 }
+
+void parejaUniforme(region* nodo1, region* nodo2) {
+	//Calculamos la media de las dos regiones
+	int pixeles1 = ((*nodo1).mat.LastRow() - (*nodo1).mat.FirstRow() + 1) * ((*nodo1).mat.LastCol() - (*nodo1).mat.FirstCol() + 1);
+	int pixeles2 = ((*nodo2).mat.LastRow() - (*nodo2).mat.FirstRow() + 1) * ((*nodo2).mat.LastCol() - (*nodo2).mat.FirstCol() + 1);
+	int muestra = ((*nodo1).mat.Sum() + (*nodo2).mat.Sum()) / (pixeles1 + pixeles2);
+	int fallos = 0;
+
+
+	//Comprobamos la parte del nodo1
+	for (int row = (*nodo1).mat.FirstRow(); row <= (*nodo1).mat.LastRow(); row++) {
+		for (int col = (*nodo1).mat.FirstCol(); col <= (*nodo1).mat.LastCol(); col++) {
+			if ((*nodo1).mat(row, col) < (muestra - RANGOFALLO) || (*nodo1).mat(row, col) > (muestra + RANGOFALLO)) {
+				fallos++;
+			}
+		}
+	}
+
+	for (int row = (*nodo2).mat.FirstRow(); row <= (*nodo2).mat.LastRow(); row++) {
+		for (int col = (*nodo2).mat.FirstCol(); col <= (*nodo2).mat.LastCol(); col++) {
+			if ((*nodo2).mat(row, col) < (muestra - RANGOFALLO) || (*nodo2).mat(row, col) > (muestra + RANGOFALLO)) {
+				fallos++;
+			}
+		}
+	}
+
+
+	int porcentajeFallos = ((double)fallos / (pixeles1 + pixeles2)) * 100;
+
+	//DEBUG
+	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
+
+	if (porcentajeFallos > PORCENTAJEPERMITIDO) {
+		//((*nodo).homogeneo = 0; //Indicamos que no es uniforme
+	}
+	else {
+		//DEBUG
+		printf("Se puede unir el nodo %i con el nodo %i\n", (*nodo1).num, (*nodo2).num);
+		//Si el nodo es homogeneo lo añadimos al vector de regiones homogeneas
+		//(*nodo).homogeneo = 1; //Indicamos que es uniforme
+		//regiones.push_back(nodo);
+	}
+}
+
+
 
 void histograma(C_Image* imagen) {
 	int Histograma[256] = { 0 };
