@@ -27,7 +27,7 @@ void fusionar();
 int nNodo = 0;
 int PORCENTAJEPERMITIDO = 10; //Porcentaje de fallos permitido en el metodo "uniforme"
 int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
-int LIMITE = 1; //Limite para la division de pixeles
+int LIMITE = 5; //Limite para la division de pixeles
 
 //DEBUG
 void dividirSimple(region* nodo);
@@ -50,10 +50,10 @@ int main(int argc, char** argv)
 	raiz.num = nNodo;
 	raiz.mat = imagen;
 
-	dividir(&raiz);
+	//dividir(&raiz);
 
 	//DEBUG
-	//dividirSimple(&raiz);
+	dividirSimple(&raiz);
 
 	fusionar();
 
@@ -161,15 +161,15 @@ void dividir(region* nodo) {
 void fusionar() {
 
 	//DEBUG
-	/*
-	int indice = 5;
+	
+	int indice = 1;
 	printf("Nodo %i\n", (*regiones[indice]).num);
 	for (int i = 0; i < regiones.size(); i++) {
 		exportar(regiones[i]);
 		if (vecinos(regiones[i], regiones[indice])) {
 			printf("Vecino con %i\n", (*regiones[i]).num);
 		}
-	}*/
+	}
 
 }
 
@@ -185,7 +185,8 @@ bool vecinos(region* nodo1, region* nodo2) {
 	int arriba2 = (*nodo2).mat.FirstRow();
 	int abajo2 = (*nodo2).mat.LastRow();
 
-	if (izq1 == der2 || der1 == izq2) { //Comprobamos si las regiones son vecinos horizontales
+
+	if (abs(izq1 - der2) == 1 || abs(der1 - izq2) == 1) { //Comprobamos si las regiones son vecinos horizontales
 
 		//Situaciones 1, 2, 4
 		if (arriba1 <= arriba2 && abajo1 > arriba2) { //que sea "<" significa que esta por encima y ">" que esta por debajo
@@ -197,8 +198,8 @@ bool vecinos(region* nodo1, region* nodo2) {
 			return true;
 		}
 	}
-
-	if (arriba1 == abajo2 || abajo1 == arriba2) { //Comprobamos si las regiones son vecinos verticales
+	
+	if (abs(arriba1 - abajo2) == 1 || abs(abajo1 - arriba2) == 1) { //Comprobamos si las regiones son vecinos verticales
 		//situaciones 1, 2, 4
 		if (izq1 <= izq2 && izq2 < der1) {
 			return true;
@@ -346,7 +347,7 @@ void dividirSimple(region* nodo) {
 	//Arriba derecha
 	primeraFila = (*nodo).mat.FirstRow();
 	ultimaFila = ((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) / 2 + (*nodo).mat.FirstRow();
-	primeraCol = ((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) / 2 + (*nodo).mat.FirstCol(); //
+	primeraCol = (((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) / 2 + (*nodo).mat.FirstCol()) + 1; //Para que no coincida con mat1
 	ultimaCol = (*nodo).mat.LastCol();
 	C_Matrix mat2((*nodo).mat,
 		primeraFila, ultimaFila,
@@ -354,7 +355,7 @@ void dividirSimple(region* nodo) {
 		primeraFila, primeraCol);
 
 	//Abajo izquierda
-	primeraFila = ((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) / 2 + (*nodo).mat.FirstRow(); //
+	primeraFila = (((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) / 2 + (*nodo).mat.FirstRow()) + 1; //Para que no coincida con mat1
 	ultimaFila = (*nodo).mat.LastRow();
 	primeraCol = (*nodo).mat.FirstCol();
 	ultimaCol = ((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) / 2 + (*nodo).mat.FirstCol();
@@ -364,9 +365,9 @@ void dividirSimple(region* nodo) {
 		primeraFila, primeraCol);
 
 	//Abajo derecha
-	primeraFila = ((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) / 2 + (*nodo).mat.FirstRow(); //
+	primeraFila = (((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) / 2 + (*nodo).mat.FirstRow()) + 1; //Para que no coincida con mat2
 	ultimaFila = (*nodo).mat.LastRow();
-	primeraCol = ((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) / 2 + (*nodo).mat.FirstCol(); //
+	primeraCol = (((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) / 2 + (*nodo).mat.FirstCol()) + 1; //Para que no coincida con mat3
 	ultimaCol = (*nodo).mat.LastCol();
 	C_Matrix mat4((*nodo).mat,
 		primeraFila, ultimaFila,
