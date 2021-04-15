@@ -26,6 +26,7 @@ void parejaUniforme(region* nodo1, region* nodo2);
 bool vecinos(region* nodo1, region* nodo2);
 int calcularPixeles(region* nodo);
 void prepararRegion(region* nodo);
+int calcularFallos(region* nodo, int muestra);
 void fusionar();
 
 int nNodo = 0;
@@ -290,22 +291,8 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 
 
 	//Comprobamos la parte del nodo1
-	for (int row = (*nodo1).mat.FirstRow(); row <= (*nodo1).mat.LastRow(); row++) {
-		for (int col = (*nodo1).mat.FirstCol(); col <= (*nodo1).mat.LastCol(); col++) {
-			if ((*nodo1).mat(row, col) < (muestra - RANGOFALLO) || (*nodo1).mat(row, col) > (muestra + RANGOFALLO)) {
-				fallos++;
-			}
-		}
-	}
-
-	for (int row = (*nodo2).mat.FirstRow(); row <= (*nodo2).mat.LastRow(); row++) {
-		for (int col = (*nodo2).mat.FirstCol(); col <= (*nodo2).mat.LastCol(); col++) {
-			if ((*nodo2).mat(row, col) < (muestra - RANGOFALLO) || (*nodo2).mat(row, col) > (muestra + RANGOFALLO)) {
-				fallos++;
-			}
-		}
-	}
-
+	fallos += calcularFallos(nodo1, muestra);
+	fallos += calcularFallos(nodo2, muestra);
 
 	int porcentajeFallos = ((double)fallos / ((*nodo1).pixeles + (*nodo2).pixeles)) * 100;
 
@@ -317,11 +304,25 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 	}
 	else {
 		(*nodo1).subregiones.push_back(nodo2);
+
 		regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
 
 		//DEBUG
 		printf("Se puede unir el nodo %i con el nodo %i\n", (*nodo1).num, (*nodo2).num);
 	}
+}
+
+int calcularFallos(region* nodo, int muestra) {
+	int fallos = 0;
+	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
+		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
+			if ((*nodo).mat(row, col) < (muestra - RANGOFALLO) || (*nodo).mat(row, col) > (muestra + RANGOFALLO)) {
+				fallos++;
+			}
+		}
+	}
+
+	return fallos;
 }
 
 
