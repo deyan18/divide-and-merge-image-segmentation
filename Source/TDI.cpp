@@ -14,6 +14,7 @@ struct region {
 	int num = -1;
 	int pixeles;
 	int suma;
+	bool disponible = true;
 };
 vector<region*> regiones;
 
@@ -26,7 +27,7 @@ void parejaUniforme(region* nodo1, region* nodo2);
 bool vecinos(region* nodo1, region* nodo2);
 int calcularPixeles(region* nodo);
 void prepararRegion(region* nodo);
-int calcularFallos(region* nodo, int muestra);
+int calcularFallos(region* nodo, int media);
 void fusionar();
 
 int nNodo = 0;
@@ -165,7 +166,7 @@ void fusionar() {
 	for (int i = 0; i < regiones.size(); i++) {
 		exportar(regiones[i]);
 		for (int j = 0; j < regiones.size(); j++) {
-			if (i != j) {
+			if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
 				if (vecinos(regiones[i], regiones[j])) {
 					parejaUniforme(regiones[i], regiones[j]);
 				}
@@ -174,6 +175,15 @@ void fusionar() {
 		}
 		
 	}
+	for (int i = 0; i < regiones.size(); i++) {
+		printf("\nNodo %i se fusiona con: ", regiones[i]->num);
+		for (int j = 0; j < (*regiones[i]).subregiones.size(); j++) {
+			printf("nodo %i ", (*regiones[i]).subregiones[j]->num);
+
+		}
+
+	}
+
 
 	//DEBUG
 	/*
@@ -252,17 +262,11 @@ int calcularPixeles(region* nodo) {
 
 //Comprueba si una region es de color más o menos uniforme dentro de un rango
 void uniforme(region* nodo) {
-	int muestra = (*nodo).mat.Mean(); //media
+	int media = (*nodo).mat.Mean();
 	int fallos = 0;
 	int pixeles = calcularPixeles(nodo);
 
-	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
-		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
-			if ((*nodo).mat(row, col) < (muestra - RANGOFALLO) || (*nodo).mat(row, col) > (muestra + RANGOFALLO)) {
-				fallos++;
-			}
-		}
-	}
+	fallos = calcularFallos(nodo, media);
 
 	int porcentajeFallos = ((double)fallos / pixeles) * 100;
 
@@ -286,13 +290,18 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 
 	//Calculamos la media de las dos regiones
 
-	int muestra = ((*nodo1).suma + (*nodo2).suma) / ((*nodo1).pixeles + (*nodo2).pixeles);
+	int media = ((*nodo1).suma + (*nodo2).suma) / ((*nodo1).pixeles + (*nodo2).pixeles);
 	int fallos = 0;
 
+	fallos += calcularFallos(nodo1, media);
+	for (int i = 0; i < (*nodo1).subregiones.size(); i++) {
+		fallos += calcularFallos((*nodo1).subregiones[i], media);
+	}
 
-	//Comprobamos la parte del nodo1
-	fallos += calcularFallos(nodo1, muestra);
-	fallos += calcularFallos(nodo2, muestra);
+	fallos += calcularFallos(nodo2, media);
+	for (int i = 0; i < (*nodo2).subregiones.size(); i++) {
+		fallos += calcularFallos((*nodo2).subregiones[i], media);
+	}
 
 	int porcentajeFallos = ((double)fallos / ((*nodo1).pixeles + (*nodo2).pixeles)) * 100;
 
@@ -304,19 +313,26 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 	}
 	else {
 		(*nodo1).subregiones.push_back(nodo2);
+		(*nodo1).pixeles += (*nodo2).pixeles;
+		(*nodo1).suma += (*nodo2).suma;
+		
+		for (int i = 0; i < (*nodo2).subregiones.size(); i++) {
+			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
+		}
 
-		regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
+		(*nodo2).disponible = false;
+		//regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
 
 		//DEBUG
-		printf("Se puede unir el nodo %i con el nodo %i\n", (*nodo1).num, (*nodo2).num);
+		//printf("Se puede unir el nodo %i con el nodo %i\n", (*nodo1).num, (*nodo2).num);
 	}
 }
 
-int calcularFallos(region* nodo, int muestra) {
+int calcularFallos(region* nodo, int media) {
 	int fallos = 0;
 	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
 		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
-			if ((*nodo).mat(row, col) < (muestra - RANGOFALLO) || (*nodo).mat(row, col) > (muestra + RANGOFALLO)) {
+			if ((*nodo).mat(row, col) < (media - RANGOFALLO) || (*nodo).mat(row, col) > (media + RANGOFALLO)) {
 				fallos++;
 			}
 		}
