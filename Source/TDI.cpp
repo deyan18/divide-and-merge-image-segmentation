@@ -34,6 +34,7 @@ int nNodo = 0;
 int PORCENTAJEPERMITIDO = 10; //Porcentaje de fallos permitido en el metodo "uniforme"
 int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
 int LIMITE = 15; //Limite para la division de pixeles
+C_Image preview;
 
 //DEBUG
 void dividirSimple(region* nodo);
@@ -49,6 +50,13 @@ int main(int argc, char** argv)
 
 	imagen.ReadBMP("Hercules_Gris.bmp");
 
+
+
+	C_Matrix matPreview(imagen.FirstRow(), imagen.LastRow(),
+		imagen.FirstCol(), imagen.LastCol(), 0);
+
+	preview = imagen;
+
 	//histograma(&imagen);
 	//inverso(&imagen);
 
@@ -62,7 +70,7 @@ int main(int argc, char** argv)
 	//dividirSimple(&raiz);
 
 	fusionar();
-
+	preview.WriteBMP("preview.bmp");
 
 
 	//imagen.WriteBMP("patata_inverso2.bmp");
@@ -280,6 +288,12 @@ void uniforme(region* nodo) {
 		//Si el nodo es homogeneo lo añadimos al vector de regiones homogeneas
 		(*nodo).homogeneo = 1; //Indicamos que es uniforme
 		regiones.push_back(nodo);
+
+		for (int i = nodo->mat.FirstRow(); i <= nodo->mat.LastRow(); i++) {
+			for (int j = nodo->mat.FirstCol(); j <= nodo->mat.LastCol(); j++) {
+				preview(i, j) = nodo->num;
+			}
+		}
 	}
 }
 
@@ -319,6 +333,8 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 		for (int i = 0; i < (*nodo2).subregiones.size(); i++) {
 			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
 		}
+
+
 
 		(*nodo2).disponible = false;
 		//regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
