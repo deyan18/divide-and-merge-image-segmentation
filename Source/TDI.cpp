@@ -31,9 +31,9 @@ int calcularFallos(region* nodo, int media);
 void fusionar();
 
 int nNodo = 0;
-int PORCENTAJEPERMITIDO = 10; //Porcentaje de fallos permitido en el metodo "uniforme"
-int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
-int LIMITE = 15; //Limite para la division de pixeles
+int PORCENTAJEPERMITIDO = 20; //Porcentaje de fallos permitido en el metodo "uniforme"
+int RANGOFALLO = 40; //Se usara para establecer el rango permitido en el metodo "uniforme"
+int LIMITE = 2; //Limite para la division de pixeles
 C_Image preview;
 
 //DEBUG
@@ -172,7 +172,7 @@ void fusionar() {
 
 	//Recorremos el vector, comprobando por parejas si son vecinos. En el caso de que los sean comprobamos si cumplen el criterio
 	for (int i = 0; i < regiones.size(); i++) {
-		exportar(regiones[i]);
+		//exportar(regiones[i]);
 		for (int j = 0; j < regiones.size(); j++) {
 			if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
 				if (vecinos(regiones[i], regiones[j])) {
@@ -334,7 +334,11 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
 		}
 
-
+		for (int i = nodo2->mat.FirstRow(); i <= nodo2->mat.LastRow(); i++) {
+			for (int j = nodo2->mat.FirstCol(); j <= nodo2->mat.LastCol(); j++) {
+				preview(i, j) = nodo1->num;
+			}
+		}
 
 		(*nodo2).disponible = false;
 		//regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
