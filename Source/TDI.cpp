@@ -31,8 +31,8 @@ int calcularFallos(region* nodo, int media);
 void fusionar();
 
 int nNodo = 0;
-int PORCENTAJEPERMITIDO = 20; //Porcentaje de fallos permitido en el metodo "uniforme"
-int RANGOFALLO = 40; //Se usara para establecer el rango permitido en el metodo "uniforme"
+int PORCENTAJEPERMITIDO = 3; //Porcentaje de fallos permitido en el metodo "uniforme"
+int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
 int LIMITE = 2; //Limite para la division de pixeles
 C_Image preview;
 
@@ -49,11 +49,6 @@ int main(int argc, char** argv)
 	C_Image::IndexT row, col;
 
 	imagen.ReadBMP("Hercules_Gris.bmp");
-
-
-
-	C_Matrix matPreview(imagen.FirstRow(), imagen.LastRow(),
-		imagen.FirstCol(), imagen.LastCol(), 0);
 
 	preview = imagen;
 
@@ -171,18 +166,49 @@ void dividir(region* nodo) {
 void fusionar() {
 
 	//Recorremos el vector, comprobando por parejas si son vecinos. En el caso de que los sean comprobamos si cumplen el criterio
-	for (int i = 0; i < regiones.size(); i++) {
-		//exportar(regiones[i]);
-		for (int j = 0; j < regiones.size(); j++) {
-			if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
-				if (vecinos(regiones[i], regiones[j])) {
-					parejaUniforme(regiones[i], regiones[j]);
-				}
-			}
+	
+	bool regionesVecinas = false;
+		for (int i = 0; i < regiones.size(); i++) {
+			//exportar(regiones[i]);
+			for (int j = 0; j < regiones.size(); j++) {
+				if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
 				
+					if (vecinos(regiones[i], regiones[j])) {
+						regionesVecinas = true;
+					}else{
+						//Subregiones de 1 con region de 2
+						for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
+							if (vecinos(regiones[i]->subregiones[k], regiones[j]))
+								regionesVecinas = true;
+						}
+
+						//Subregiones de 2 con region de 1
+						for (int k = 0; k < regiones[j]->subregiones.size(); k++) {
+							if (vecinos(regiones[j]->subregiones[k], regiones[i]))
+								regionesVecinas = true;
+						}
+
+						//Subregiones de 1 con subregiones de 2
+						for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
+							for (int z = 0; z < regiones[j]->subregiones.size(); z++) {
+								if (vecinos(regiones[i]->subregiones[k], regiones[j]->subregiones[z]))
+									regionesVecinas = true;
+							}
+						}
+					}
+					
+
+					if (regionesVecinas) {
+						parejaUniforme(regiones[i], regiones[j]);
+					}
+				}
+
+			}
+
 		}
-		
-	}
+	
+
+	//DEBUG
 	for (int i = 0; i < regiones.size(); i++) {
 		printf("\nNodo %i se fusiona con: ", regiones[i]->num);
 		for (int j = 0; j < (*regiones[i]).subregiones.size(); j++) {
@@ -352,7 +378,7 @@ int calcularFallos(region* nodo, int media) {
 	int fallos = 0;
 	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
 		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
-			if ((*nodo).mat(row, col) < (media - RANGOFALLO) || (*nodo).mat(row, col) > (media + RANGOFALLO)) {
+			if ((*nodo).mat(row, col) < abs(media - RANGOFALLO) || (*nodo).mat(row, col) > (media + RANGOFALLO)) {
 				fallos++;
 			}
 		}
