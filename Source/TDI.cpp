@@ -15,6 +15,7 @@ struct region {
 	int pixeles;
 	int suma;
 	bool disponible = true;
+	int color;
 };
 vector<region*> regiones;
 
@@ -31,9 +32,11 @@ int calcularFallos(region* nodo, int media);
 void fusionar();
 
 int nNodo = 0;
-int PORCENTAJEPERMITIDO = 3; //Porcentaje de fallos permitido en el metodo "uniforme"
-int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
-int LIMITE = 2; //Limite para la division de pixeles
+int PORCENTAJEPERMITIDO = 1; //Porcentaje de fallos permitido en el metodo "uniforme"
+int RANGOFALLO = 0; //Se usara para establecer el rango permitido en el metodo "uniforme"
+int LIMITE = 1; //Limite para la division de pixeles
+int INCREMENTO = 30; //
+int COLOR = INCREMENTO;
 C_Image preview;
 
 //DEBUG
@@ -48,9 +51,10 @@ int main(int argc, char** argv)
 	C_Image imagen;
 	C_Image::IndexT row, col;
 
-	imagen.ReadBMP("Hercules_Gris.bmp");
+	imagen.ReadBMP("cuadro2.bmp");
 
 	preview = imagen;
+	preview.SetValue(0);
 
 	//histograma(&imagen);
 	//inverso(&imagen);
@@ -68,7 +72,7 @@ int main(int argc, char** argv)
 	preview.WriteBMP("preview.bmp");
 
 
-	//imagen.WriteBMP("patata_inverso2.bmp");
+	//imagen.WriteBMP("cuadro_exportado.bmp");
 
 }
 
@@ -171,6 +175,7 @@ void fusionar() {
 		for (int i = 0; i < regiones.size(); i++) {
 			//exportar(regiones[i]);
 			for (int j = 0; j < regiones.size(); j++) {
+				regionesVecinas = false;
 				if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
 				
 					if (vecinos(regiones[i], regiones[j])) {
@@ -178,21 +183,30 @@ void fusionar() {
 					}else{
 						//Subregiones de 1 con region de 2
 						for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
-							if (vecinos(regiones[i]->subregiones[k], regiones[j]))
+							if (vecinos(regiones[i]->subregiones[k], regiones[j])) {
 								regionesVecinas = true;
+								break;
+							}
+								
 						}
 
 						//Subregiones de 2 con region de 1
 						for (int k = 0; k < regiones[j]->subregiones.size(); k++) {
-							if (vecinos(regiones[j]->subregiones[k], regiones[i]))
+							if (vecinos(regiones[j]->subregiones[k], regiones[i])) {
 								regionesVecinas = true;
+								break;
+							}
+								
 						}
 
 						//Subregiones de 1 con subregiones de 2
 						for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
 							for (int z = 0; z < regiones[j]->subregiones.size(); z++) {
-								if (vecinos(regiones[i]->subregiones[k], regiones[j]->subregiones[z]))
+								if (vecinos(regiones[i]->subregiones[k], regiones[j]->subregiones[z])) {
 									regionesVecinas = true;
+									break;
+								}
+									
 							}
 						}
 					}
@@ -252,7 +266,7 @@ bool vecinos(region* nodo1, region* nodo2) {
 	int abajo2 = (*nodo2).mat.LastRow();
 
 
-	if (abs(izq1 - der2) == 1 || abs(der1 - izq2) == 1) { //Comprobamos si las regiones son vecinos horizontales
+	if (abs(izq1 - der2) <= 1 || abs(der1 - izq2) <= 1) { //Comprobamos si las regiones son vecinos horizontales
 
 		//Situaciones 1, 2, 4
 		if (arriba1 <= arriba2 && abajo1 > arriba2) { //que sea "<" significa que esta por encima y ">" que esta por debajo
@@ -265,7 +279,7 @@ bool vecinos(region* nodo1, region* nodo2) {
 		}
 	}
 	
-	if (abs(arriba1 - abajo2) == 1 || abs(abajo1 - arriba2) == 1) { //Comprobamos si las regiones son vecinos verticales
+	if (abs(arriba1 - abajo2) <= 1 || abs(abajo1 - arriba2) <= 1) { //Comprobamos si las regiones son vecinos verticales
 		//situaciones 1, 2, 4
 		if (izq1 <= izq2 && izq2 < der1) {
 			return true;
@@ -315,6 +329,8 @@ void uniforme(region* nodo) {
 		(*nodo).homogeneo = 1; //Indicamos que es uniforme
 		regiones.push_back(nodo);
 
+		
+
 		for (int i = nodo->mat.FirstRow(); i <= nodo->mat.LastRow(); i++) {
 			for (int j = nodo->mat.FirstCol(); j <= nodo->mat.LastCol(); j++) {
 				preview(i, j) = nodo->num;
@@ -352,9 +368,15 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 		//((*nodo).homogeneo = 0; //Indicamos que no es uniforme
 	}
 	else {
+		if (nodo1->subregiones.empty()) {
+			COLOR += INCREMENTO;
+			nodo1->color = COLOR;
+		}
 		(*nodo1).subregiones.push_back(nodo2);
 		(*nodo1).pixeles += (*nodo2).pixeles;
 		(*nodo1).suma += (*nodo2).suma;
+
+		
 		
 		for (int i = 0; i < (*nodo2).subregiones.size(); i++) {
 			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
@@ -362,7 +384,7 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 
 		for (int i = nodo2->mat.FirstRow(); i <= nodo2->mat.LastRow(); i++) {
 			for (int j = nodo2->mat.FirstCol(); j <= nodo2->mat.LastCol(); j++) {
-				preview(i, j) = nodo1->num;
+				preview(i, j) = nodo1->color;
 			}
 		}
 
