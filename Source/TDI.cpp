@@ -32,10 +32,10 @@ int calcularFallos(region* nodo, int media);
 void fusionar();
 
 int nNodo = 0;
-int PORCENTAJEPERMITIDO = 1; //Porcentaje de fallos permitido en el metodo "uniforme"
-int RANGOFALLO = 0; //Se usara para establecer el rango permitido en el metodo "uniforme"
+int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo "uniforme"
+int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
 int LIMITE = 1; //Limite para la division de pixeles
-int INCREMENTO = 30; //
+int INCREMENTO = 10; //
 int COLOR = INCREMENTO;
 C_Image preview;
 
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 	C_Image imagen;
 	C_Image::IndexT row, col;
 
-	imagen.ReadBMP("cuadro2.bmp");
+	imagen.ReadBMP("Hercules_Gris.bmp");
 
 	preview = imagen;
 	preview.SetValue(0);
@@ -168,7 +168,7 @@ void dividir(region* nodo) {
 }
 
 void fusionar() {
-
+	
 	//Recorremos el vector, comprobando por parejas si son vecinos. En el caso de que los sean comprobamos si cumplen el criterio
 	
 	bool regionesVecinas = false;
@@ -224,18 +224,21 @@ void fusionar() {
 
 	//DEBUG
 	for (int i = 0; i < regiones.size(); i++) {
-		printf("\nNodo %i se fusiona con: ", regiones[i]->num);
-		for (int j = 0; j < (*regiones[i]).subregiones.size(); j++) {
-			printf("nodo %i ", (*regiones[i]).subregiones[j]->num);
+		if(regiones[i]->disponible){
+			printf("\nNodo %i se fusiona con: ", regiones[i]->num);
+			for (int j = 0; j < (*regiones[i]).subregiones.size(); j++) {
+				printf("nodo %i ", (*regiones[i]).subregiones[j]->num);
 
+			}
 		}
+		
 
 	}
-
+	
 
 	//DEBUG
 	/*
-	int indice = 1;
+	int indice = 4;
 	printf("Nodo %i\n", (*regiones[indice]).num);
 	for (int i = 0; i < regiones.size(); i++) {
 		exportar(regiones[i]);
@@ -269,24 +272,25 @@ bool vecinos(region* nodo1, region* nodo2) {
 	if (abs(izq1 - der2) <= 1 || abs(der1 - izq2) <= 1) { //Comprobamos si las regiones son vecinos horizontales
 
 		//Situaciones 1, 2, 4
-		if (arriba1 <= arriba2 && abajo1 > arriba2) { //que sea "<" significa que esta por encima y ">" que esta por debajo
+		if (arriba1 <= arriba2 && abajo1 >= arriba2) { //que sea "<" significa que esta por encima y ">" que esta por debajo
 			return true;
 		}
 
 		//Situaciones 3, 5
-		if (arriba2 <= arriba1 && abajo2 > arriba1) {
+		if (arriba2 <= arriba1 && abajo2 >= arriba1) {
 			return true;
 		}
 	}
 	
 	if (abs(arriba1 - abajo2) <= 1 || abs(abajo1 - arriba2) <= 1) { //Comprobamos si las regiones son vecinos verticales
 		//situaciones 1, 2, 4
-		if (izq1 <= izq2 && izq2 < der1) {
+		if (izq1 <= izq2 && izq2 <= der1) {
 			return true;
 		}
 
 		//Situaciones 4, 5
-		if (izq2 <= izq1 && izq1 < der2) {
+
+		if (izq2 <= izq1 && izq1 <= der2) {
 			return true;
 		}
 	}
@@ -371,6 +375,12 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 		if (nodo1->subregiones.empty()) {
 			COLOR += INCREMENTO;
 			nodo1->color = COLOR;
+
+			for (int i = nodo1->mat.FirstRow(); i <= nodo1->mat.LastRow(); i++) {
+				for (int j = nodo1->mat.FirstCol(); j <= nodo1->mat.LastCol(); j++) {
+					preview(i, j) = nodo1->color;
+				}
+			}
 		}
 		(*nodo1).subregiones.push_back(nodo2);
 		(*nodo1).pixeles += (*nodo2).pixeles;
@@ -382,11 +392,16 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
 		}
 
-		for (int i = nodo2->mat.FirstRow(); i <= nodo2->mat.LastRow(); i++) {
-			for (int j = nodo2->mat.FirstCol(); j <= nodo2->mat.LastCol(); j++) {
-				preview(i, j) = nodo1->color;
+		
+
+		for (int k = 0; k < nodo1->subregiones.size(); k++) {
+			for (int i = nodo1->subregiones[k]->mat.FirstRow(); i <= nodo1->subregiones[k]->mat.LastRow(); i++) {
+				for (int j = nodo1->subregiones[k]->mat.FirstCol(); j <= nodo1->subregiones[k]->mat.LastCol(); j++) {
+					preview(i, j) = nodo1->color;
+				}
 			}
 		}
+		
 
 		(*nodo2).disponible = false;
 		//regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
