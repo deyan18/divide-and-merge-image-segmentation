@@ -51,7 +51,51 @@ int main(int argc, char** argv)
 	C_Image imagen;
 	C_Image::IndexT row, col;
 
-	imagen.ReadBMP("Hercules_Gris.bmp");
+	string respuesta;
+
+	while (true) {
+		try
+		{
+			printf("Introduce el nombre del archivo: ");
+			getline(cin, respuesta);
+
+			imagen.ReadBMP(respuesta.c_str());
+			break;
+		}
+		catch (exception e)
+		{
+			cout << "El nombre del archivo no es valido" << '\n';
+		}
+		
+	}
+	
+
+	
+
+	printf("Desea modificar las variables? (S/N): ");
+	getline(cin, respuesta);
+
+	for (auto& c : respuesta) c = toupper(c);
+
+	if (respuesta == "S" || respuesta == "SI") {
+		printf("Introduce el porcentaje de fallos permitido: ");
+		getline(cin, respuesta);
+		PORCENTAJEPERMITIDO = stoi(respuesta);
+
+		printf("Introduce el rango de diferencia con la media permitido: ");
+		getline(cin, respuesta);
+		RANGOFALLO = stoi(respuesta);
+
+		printf("Introduce el limite para la division de nodos: ");
+		getline(cin, respuesta);
+		LIMITE = stoi(respuesta);
+
+		printf("Introduce el incremento para cada color de la salida: ");
+		getline(cin, respuesta);
+		INCREMENTO = stoi(respuesta);
+	}
+
+
 
 	preview = imagen;
 	preview.SetValue(0);
@@ -269,7 +313,7 @@ bool vecinos(region* nodo1, region* nodo2) {
 	int abajo2 = (*nodo2).mat.LastRow();
 
 
-	if (abs(izq1 - der2) <= 1 || abs(der1 - izq2) <= 1) { //Comprobamos si las regiones son vecinos horizontales
+	if (abs(izq1 - der2) == 1 || abs(der1 - izq2) == 1) { //Comprobamos si las regiones son vecinos horizontales
 
 		//Situaciones 1, 2, 4
 		if (arriba1 <= arriba2 && abajo1 >= arriba2) { //que sea "<" significa que esta por encima y ">" que esta por debajo
@@ -282,7 +326,7 @@ bool vecinos(region* nodo1, region* nodo2) {
 		}
 	}
 	
-	if (abs(arriba1 - abajo2) <= 1 || abs(abajo1 - arriba2) <= 1) { //Comprobamos si las regiones son vecinos verticales
+	if (abs(arriba1 - abajo2) == 1 || abs(abajo1 - arriba2) == 1) { //Comprobamos si las regiones son vecinos verticales
 		//situaciones 1, 2, 4
 		if (izq1 <= izq2 && izq2 <= der1) {
 			return true;
@@ -334,12 +378,12 @@ void uniforme(region* nodo) {
 		regiones.push_back(nodo);
 
 		
-
+		/*
 		for (int i = nodo->mat.FirstRow(); i <= nodo->mat.LastRow(); i++) {
 			for (int j = nodo->mat.FirstCol(); j <= nodo->mat.LastCol(); j++) {
 				preview(i, j) = nodo->num;
 			}
-		}
+		}*/
 	}
 }
 
