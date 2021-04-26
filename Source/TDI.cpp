@@ -30,6 +30,7 @@ int calcularPixeles(region* nodo);
 void prepararRegion(region* nodo);
 int calcularFallos(region* nodo, int media);
 void fusionar();
+void megaFusion();
 
 int nNodo = 0;
 int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo "uniforme"
@@ -38,6 +39,7 @@ int LIMITE = 1; //Limite para la division de pixeles
 int INCREMENTO = 10; //
 int COLOR = INCREMENTO;
 C_Image preview;
+C_Image salidaMega;
 
 //DEBUG
 void dividirSimple(region* nodo);
@@ -98,6 +100,8 @@ int main(int argc, char** argv)
 
 
 	preview = imagen;
+	salidaMega = imagen;
+	salidaMega.SetValue(255);
 	preview.SetValue(0);
 
 	//histograma(&imagen);
@@ -113,9 +117,10 @@ int main(int argc, char** argv)
 	//dividirSimple(&raiz);
 
 	fusionar();
+	preview.palette.Read("PaletaSurtida256.txt");
 	preview.WriteBMP("preview.bmp");
 
-
+	megaFusion();
 	//imagen.WriteBMP("cuadro_exportado.bmp");
 
 }
@@ -453,6 +458,35 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 		//DEBUG
 		//printf("Se puede unir el nodo %i con el nodo %i\n", (*nodo1).num, (*nodo2).num);
 	}
+}
+
+void megaFusion() {
+	int max = regiones[0]->subregiones.size();
+	int indice = 0;
+
+	for (int i = 0; i < regiones.size(); i++) {
+		if (regiones[i]->subregiones.size() > max) {
+			indice = i;
+		}
+	}
+
+	for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
+		for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
+			salidaMega(i, j) = 0;
+		}
+	}
+
+
+	for (int k = 0; k < regiones[indice]->subregiones.size(); k++) {
+		for (int i = regiones[indice]->subregiones[k]->mat.FirstRow(); i <= regiones[indice]->subregiones[k]->mat.LastRow(); i++) {
+			for (int j = regiones[indice]->subregiones[k]->mat.FirstCol(); j <= regiones[indice]->subregiones[k]->mat.LastCol(); j++) {
+				salidaMega(i, j) = 0;
+			}
+		}
+	}
+
+
+	salidaMega.WriteBMP("salidaMega.bmp");
 }
 
 int calcularFallos(region* nodo, int media) {
