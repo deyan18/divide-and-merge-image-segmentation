@@ -39,6 +39,7 @@ int LIMITE = 1; //Limite para la division de pixeles
 int INCREMENTO = 10; //
 int COLOR = INCREMENTO;
 int FACTORDIVISION = 1;
+int LIMITEMEGAFUSION = 100;
 C_Image preview;
 C_Image salidaMega;
 
@@ -100,6 +101,10 @@ int main(int argc, char** argv)
 		printf("Introduce el factor de division: ");
 		getline(cin, respuesta);
 		FACTORDIVISION = stoi(respuesta);
+
+		printf("Introduce el limite para la mega fusion: ");
+		getline(cin, respuesta);
+		LIMITEMEGAFUSION = stoi(respuesta);
 	}
 
 
@@ -470,7 +475,7 @@ void megaFusion() {
 	int indice = 0;
 	bool actualizado;
 
-	while(1==1) {
+	for(int g = 0; g < LIMITEMEGAFUSION; g++ ){
 		actualizado = false;
 		printf("Max entrada: %i\n", max);
 		for (int i = 0; i < regiones.size(); i++) {
@@ -480,7 +485,8 @@ void megaFusion() {
 				actualizado = true;
 			}
 		}
-		if (!actualizado) {
+		if (!actualizado && LIMITEMEGAFUSION == 100) {
+			printf("BREAK MEGAFUSION");
 			break;
 		}
 		printf("Max escogido; %i\n", max);
