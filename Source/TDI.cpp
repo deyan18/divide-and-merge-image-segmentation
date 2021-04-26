@@ -38,6 +38,7 @@ int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo 
 int LIMITE = 1; //Limite para la division de pixeles
 int INCREMENTO = 10; //
 int COLOR = INCREMENTO;
+int FACTORDIVISION = 1;
 C_Image preview;
 C_Image salidaMega;
 
@@ -95,6 +96,10 @@ int main(int argc, char** argv)
 		printf("Introduce el incremento para cada color de la salida: ");
 		getline(cin, respuesta);
 		INCREMENTO = stoi(respuesta);
+
+		printf("Introduce el factor de division: ");
+		getline(cin, respuesta);
+		FACTORDIVISION = stoi(respuesta);
 	}
 
 
@@ -461,37 +466,49 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 }
 
 void megaFusion() {
-	int max = regiones[0]->subregiones.size();
+	int max = regiones[0]->pixeles;
 	int indice = 0;
+	bool actualizado;
 
-	for (int i = 0; i < regiones.size(); i++) {
-		if (regiones[i]->subregiones.size() > max && regiones[i]->disponible) {
-			indice = i;
+	while(1==1) {
+		actualizado = false;
+		printf("Max entrada: %i\n", max);
+		for (int i = 0; i < regiones.size(); i++) {
+			if (regiones[i]->pixeles > max && regiones[i]->disponible) {
+				indice = i;
+				max = regiones[i]->pixeles;
+				actualizado = true;
+			}
 		}
-	}
-
-	printf("MEGAFUSION: Region %i con subregiones ", indice);
-
-	for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
-		for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
-			salidaMega(i, j) = 0;
+		if (!actualizado) {
+			break;
 		}
-	}
+		printf("Max escogido; %i\n", max);
 
+		regiones[indice]->disponible = false;
+		max = max/FACTORDIVISION;
 
-	for (int k = 0; k < regiones[indice]->subregiones.size(); k++) {
-		for (int i = regiones[indice]->subregiones[k]->mat.FirstRow(); i <= regiones[indice]->subregiones[k]->mat.LastRow(); i++) {
-			for (int j = regiones[indice]->subregiones[k]->mat.FirstCol(); j <= regiones[indice]->subregiones[k]->mat.LastCol(); j++) {
+		for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
+			for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
 				salidaMega(i, j) = 0;
 			}
 		}
-		printf("%i ", regiones[indice]->subregiones[k]->num);
-	}
+
+
+		for (int k = 0; k < regiones[indice]->subregiones.size(); k++) {
+			for (int i = regiones[indice]->subregiones[k]->mat.FirstRow(); i <= regiones[indice]->subregiones[k]->mat.LastRow(); i++) {
+				for (int j = regiones[indice]->subregiones[k]->mat.FirstCol(); j <= regiones[indice]->subregiones[k]->mat.LastCol(); j++) {
+					salidaMega(i, j) = 0;
+				}
+			}
+		}
 
 	
 
+	}
 
 	salidaMega.WriteBMP("salidaMega.bmp");
+
 }
 
 int calcularFallos(region* nodo, int media) {
