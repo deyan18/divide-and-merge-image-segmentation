@@ -465,10 +465,12 @@ void megaFusion() {
 	int indice = 0;
 
 	for (int i = 0; i < regiones.size(); i++) {
-		if (regiones[i]->subregiones.size() > max) {
+		if (regiones[i]->subregiones.size() > max && regiones[i]->disponible) {
 			indice = i;
 		}
 	}
+
+	printf("MEGAFUSION: Region %i con subregiones ", indice);
 
 	for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
 		for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
@@ -483,7 +485,10 @@ void megaFusion() {
 				salidaMega(i, j) = 0;
 			}
 		}
+		printf("%i ", regiones[indice]->subregiones[k]->num);
 	}
+
+	
 
 
 	salidaMega.WriteBMP("salidaMega.bmp");
