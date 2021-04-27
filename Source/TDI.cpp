@@ -1,7 +1,7 @@
 #include <C_Image.hpp>
 #include <vector>
 #include <iostream>
-int Test(int argc, char **argv);
+int Test(int argc, char** argv);
 
 struct region {
 	vector<region*> subregiones; //Vector donde se incluyen las regiones al unir nodos
@@ -37,7 +37,7 @@ int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo unifo
 int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo uniforme()
 int LIMITE = 1; //Limite para la division de pixeles
 int FACTORDIVISION = 1; //Limite para la comprobacion en el metodo megaFusion
-int LIMITESEPARACIONFONDO = 100; 
+int LIMITESEPARACIONFONDO = 100;
 bool separacionFondoElegida = false;
 vector<int> coloresDisponibles; //Vector en el que se guardan los colores que se han dejado de usar para poder reutilizarlos mas tarde
 vector<region*> regiones; //Vector en el que guardamos todas las regiones homogeneas
@@ -70,9 +70,9 @@ int main(int argc, char** argv)
 		{
 			cout << "El nombre del archivo no es valido" << '\n';
 		}
-		
+
 	}
-	
+
 	printf("Desea modificar las variables para la SEGMENTACION? (S/N): ");
 	getline(cin, respuesta);
 
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
 
 		printf("Introduce el limite para la division de nodos: ");
 		getline(cin, respuesta);
-		LIMITE = stoi(respuesta);	
+		LIMITE = stoi(respuesta);
 	}
 
 	printf("Desea realizar la SEPARACION DE FONDO? (S/N): ");
@@ -149,9 +149,11 @@ void dividir(region* nodo) {
 
 	//DEBUG
 	if (((*nodo).mat.LastRow() - (*nodo).mat.FirstRow()) < LIMITE) {
+		regiones.push_back(nodo);
 		printf("LIMITE Nodo:%i	%i - %i = %i\n", (*nodo).num, (*nodo).mat.LastRow(), (*nodo).mat.FirstRow(), (*nodo).mat.LastRow() - (*nodo).mat.FirstRow());
 		return;
 	}if (((*nodo).mat.LastCol() - (*nodo).mat.FirstCol()) < LIMITE) {
+		regiones.push_back(nodo);
 		printf("LIMITE Nodo:%i	%i - %i = %i\n", (*nodo).num, (*nodo).mat.LastCol(), (*nodo).mat.FirstCol(), (*nodo).mat.LastCol() - (*nodo).mat.FirstCol());
 		return;
 	}
@@ -236,74 +238,96 @@ void dividir(region* nodo) {
 }
 
 void fusionar() {
-	
+
 	//Recorremos el vector, comprobando por parejas si son vecinos. En el caso de que los sean comprobamos si cumplen el criterio
-	
+
 	bool regionesVecinas = false;
-		for (int i = 0; i < regiones.size(); i++) {
-			//exportar(regiones[i]);
-			for (int j = 0; j < regiones.size(); j++) {
-				regionesVecinas = false;
-				if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
-				
-					if (vecinos(regiones[i], regiones[j])) {
-						regionesVecinas = true;
-					}else{
-						//Subregiones de 1 con region de 2
-						for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
-							if (vecinos(regiones[i]->subregiones[k], regiones[j])) {
-								regionesVecinas = true;
-								break;
-							}
-								
+	for (int i = 0; i < regiones.size(); i++) {
+		//exportar(regiones[i]);
+		for (int j = 0; j < regiones.size(); j++) {
+			regionesVecinas = false;
+			if (i != j && regiones[j]->disponible && regiones[i]->disponible) {
+
+				if (vecinos(regiones[i], regiones[j])) {
+					regionesVecinas = true;
+				}
+				else {
+					//Subregiones de 1 con region de 2
+					for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
+						if (vecinos(regiones[i]->subregiones[k], regiones[j])) {
+							regionesVecinas = true;
+							break;
 						}
 
-						//Subregiones de 2 con region de 1
-						for (int k = 0; k < regiones[j]->subregiones.size(); k++) {
-							if (vecinos(regiones[j]->subregiones[k], regiones[i])) {
-								regionesVecinas = true;
-								break;
-							}
-								
-						}
-
-						//Subregiones de 1 con subregiones de 2
-						for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
-							for (int z = 0; z < regiones[j]->subregiones.size(); z++) {
-								if (vecinos(regiones[i]->subregiones[k], regiones[j]->subregiones[z])) {
-									regionesVecinas = true;
-									break;
-								}
-									
-							}
-						}
 					}
-					
 
-					if (regionesVecinas) {
-						parejaUniforme(regiones[i], regiones[j]);
+					//Subregiones de 2 con region de 1
+					for (int k = 0; k < regiones[j]->subregiones.size(); k++) {
+						if (vecinos(regiones[j]->subregiones[k], regiones[i])) {
+							regionesVecinas = true;
+							break;
+						}
+
+					}
+
+					//Subregiones de 1 con subregiones de 2
+					for (int k = 0; k < regiones[i]->subregiones.size(); k++) {
+						for (int z = 0; z < regiones[j]->subregiones.size(); z++) {
+							if (vecinos(regiones[i]->subregiones[k], regiones[j]->subregiones[z])) {
+								regionesVecinas = true;
+								break;
+							}
+
+						}
 					}
 				}
 
+
+				if (regionesVecinas) {
+					parejaUniforme(regiones[i], regiones[j]);
+				}
 			}
 
 		}
-	
+
+	}
+
 
 	//DEBUG
 	for (int i = 0; i < regiones.size(); i++) {
-		if(regiones[i]->disponible){
+		if (regiones[i]->disponible) {
 			printf("\nNodo %i se fusiona con: ", regiones[i]->num);
 			for (int j = 0; j < (*regiones[i]).subregiones.size(); j++) {
 				printf("nodo %i ", (*regiones[i]).subregiones[j]->num);
 
 			}
 		}
-		
+
 
 	}
-	
 
+	COLOR = 0;
+	for (int g = 0; g < regiones.size(); g++) {
+		if (regiones[g]->disponible && !regiones[g]->subregiones.empty()) {
+			COLOR++;
+			printf("Region %i, Color %i, Subregiones :", regiones[g]->num, COLOR);
+			for (int i = regiones[g]->mat.FirstRow(); i <= regiones[g]->mat.LastRow(); i++) {
+				for (int j = regiones[g]->mat.FirstCol(); j <= regiones[g]->mat.LastCol(); j++) {
+					salidaSegmentacion(i, j) =	COLOR;
+				}
+			}
+
+			for (int k = 0; k < regiones[g]->subregiones.size(); k++) {
+				printf("%i ", regiones[g]->subregiones[k]->num);
+				for (int i = regiones[g]->subregiones[k]->mat.FirstRow(); i <= regiones[g]->subregiones[k]->mat.LastRow(); i++) {
+					for (int j = regiones[g]->subregiones[k]->mat.FirstCol(); j <= regiones[g]->subregiones[k]->mat.LastCol(); j++) {
+						salidaSegmentacion(i, j) = COLOR;
+					}
+				}
+			}
+			printf("\n");
+		}
+	}
 	//DEBUG
 	/*
 	int indice = 4;
@@ -317,7 +341,7 @@ void fusionar() {
 
 }
 
-void prepararRegion(region* nodo){
+void prepararRegion(region* nodo) {
 	nNodo++;
 	nodo->num = nNodo;
 	nodo->pixeles = calcularPixeles(nodo);
@@ -349,7 +373,7 @@ bool vecinos(region* nodo1, region* nodo2) {
 			return true;
 		}
 	}
-	
+
 	if (abs(arriba1 - abajo2) == 1 || abs(abajo1 - arriba2) == 1) { //Comprobamos si las regiones son vecinos verticales
 		//situaciones 1, 2, 4
 		if (izq1 <= izq2 && izq2 <= der1) {
@@ -401,7 +425,7 @@ void uniforme(region* nodo) {
 		(*nodo).homogeneo = 1; //Indicamos que es uniforme
 		regiones.push_back(nodo);
 
-		
+
 		/*
 		for (int i = nodo->mat.FirstRow(); i <= nodo->mat.LastRow(); i++) {
 			for (int j = nodo->mat.FirstCol(); j <= nodo->mat.LastCol(); j++) {
@@ -440,11 +464,13 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 		if (nodo2->color != -1 && nodo1->color != -1) { //Los dos nodos tienen colores
 			//Se usa el del nodo1 y el del nodo2 se aniada al vector de colores disponibles
 			coloresDisponibles.push_back(nodo2->color);
-		}else if(nodo2->color != -1 && nodo1->color == -1){ //El nodo2 tiene un color pero el nodo1 no
-			//Se coge el color del nodo2
+		}
+		else if (nodo2->color != -1 && nodo1->color == -1) { //El nodo2 tiene un color pero el nodo1 no
+		   //Se coge el color del nodo2
 			nodo1->color = nodo2->color;
-		}else if (nodo1->color == -1 && nodo2->color == -1) { //Si los dos no tienen colores
-			//Comprobamos si hay colores disponibles
+		}
+		else if (nodo1->color == -1 && nodo2->color == -1) { //Si los dos no tienen colores
+		   //Comprobamos si hay colores disponibles
 			if (!coloresDisponibles.empty()) { //Si hay un color disponible lo cogemos y lo eliminamos del vector
 				nodo1->color = coloresDisponibles[0];
 				coloresDisponibles.erase(std::remove(coloresDisponibles.begin(), coloresDisponibles.end(), coloresDisponibles[0]), coloresDisponibles.end());
@@ -463,20 +489,8 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
 		}
 
-		for (int i = nodo1->mat.FirstRow(); i <= nodo1->mat.LastRow(); i++) {
-			for (int j = nodo1->mat.FirstCol(); j <= nodo1->mat.LastCol(); j++) {
-				salidaSegmentacion(i, j) = nodo1->color;
-			}
-		}
+	
 
-		for (int k = 0; k < nodo1->subregiones.size(); k++) {
-			for (int i = nodo1->subregiones[k]->mat.FirstRow(); i <= nodo1->subregiones[k]->mat.LastRow(); i++) {
-				for (int j = nodo1->subregiones[k]->mat.FirstCol(); j <= nodo1->subregiones[k]->mat.LastCol(); j++) {
-					salidaSegmentacion(i, j) = nodo1->color;
-				}
-			}
-		}
-		
 
 		(*nodo2).disponible = false;
 		//regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
@@ -491,7 +505,7 @@ void separacionFondo() {
 	int indice = 0;
 	bool actualizado;
 
-	for(int g = 0; g < LIMITESEPARACIONFONDO; g++ ){
+	for (int g = 0; g < LIMITESEPARACIONFONDO; g++) {
 		actualizado = false;
 		printf("Max entrada: %i\n", max);
 		for (int i = 0; i < regiones.size(); i++) {
@@ -508,7 +522,7 @@ void separacionFondo() {
 		printf("Max escogido; %i\n", max);
 
 		regiones[indice]->disponible = false;
-		max = max/FACTORDIVISION;
+		max = max / FACTORDIVISION;
 
 		for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
 			for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
@@ -525,7 +539,7 @@ void separacionFondo() {
 			}
 		}
 
-	
+
 
 	}
 
@@ -537,7 +551,7 @@ int calcularFallos(region* nodo, int media) {
 	int fallos = 0;
 	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
 		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
-			if ((*nodo).mat(row, col) < abs(media - RANGOFALLO) || (*nodo).mat(row, col) > (media + RANGOFALLO)) {
+			if ((*nodo).mat(row, col) <= (media - RANGOFALLO) || (*nodo).mat(row, col) >= (media + RANGOFALLO)) {
 				fallos++;
 			}
 		}
