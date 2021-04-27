@@ -33,12 +33,15 @@ void separacionFondo();
 
 int nNodo = 0;
 int COLOR = 0;
-int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo uniforme()
-int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo uniforme()
+int PORCENTAJEDIVISION = 5; //Porcentaje de fallos permitido en el metodo uniforme()
+int PORCENTAJEFUSION= 5; //Porcentaje de fallos permitido en el metodo uniforme()
+int RANGOFALLODIVISION = 10; //Se usara para establecer el rango permitido en el metodo uniforme()
+int RANGOFALLOFUSION = 10; //Se usara para establecer el rango permitido en el metodo uniforme()
 int LIMITE = 1; //Limite para la division de pixeles
 int FACTORDIVISION = 1; //Limite para la comprobacion en el metodo megaFusion
 int LIMITESEPARACIONFONDO = 100;
 bool separacionFondoElegida = false;
+bool modoDivision;
 vector<int> coloresDisponibles; //Vector en el que se guardan los colores que se han dejado de usar para poder reutilizarlos mas tarde
 vector<region*> regiones; //Vector en el que guardamos todas las regiones homogeneas
 C_Image salidaSegmentacion;
@@ -79,13 +82,21 @@ int main(int argc, char** argv)
 	for (auto& c : respuesta) c = toupper(c);
 
 	if (respuesta == "S" || respuesta == "SI") {
-		printf("Introduce el porcentaje de fallos permitido: ");
+		printf("Introduce el porcentaje de fallos permitido en la DIVISION: ");
 		getline(cin, respuesta);
-		PORCENTAJEPERMITIDO = stoi(respuesta);
+		PORCENTAJEDIVISION = stoi(respuesta);
 
-		printf("Introduce el rango de diferencia con la media permitido: ");
+		printf("Introduce el rango de diferencia con la media permitido en la DIVISION: ");
 		getline(cin, respuesta);
-		RANGOFALLO = stoi(respuesta);
+		RANGOFALLODIVISION = stoi(respuesta);
+
+		printf("Introduce el porcentaje de fallos permitido en la FUSION: ");
+		getline(cin, respuesta);
+		PORCENTAJEFUSION = stoi(respuesta);
+
+		printf("Introduce el rango de diferencia con la media permitido en la FUSION: ");
+		getline(cin, respuesta);
+		RANGOFALLOFUSION = stoi(respuesta);
 
 		printf("Introduce el limite para la division de nodos: ");
 		getline(cin, respuesta);
@@ -127,11 +138,13 @@ int main(int argc, char** argv)
 	raiz.num = nNodo;
 	raiz.mat = imagen;
 
+	modoDivision = true;
 	dividir(&raiz);
 
 	//DEBUG
 	//dividirSimple(&raiz);
 
+	modoDivision = false;
 	fusionar();
 	salidaSegmentacion.palette.Read("PaletaSurtida256.txt");
 	salidaSegmentacion.WriteBMP("salidaSegmentacion.bmp");
@@ -416,8 +429,15 @@ void uniforme(region* nodo) {
 
 	//DEBUG
 	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
+	int porcentajeComparacion;
+	if (modoDivision) {
+		porcentajeComparacion = PORCENTAJEDIVISION;
+	}
+	else {
+		porcentajeComparacion = PORCENTAJEFUSION;
+	}
 
-	if (porcentajeFallos > PORCENTAJEPERMITIDO) {
+	if (porcentajeFallos > porcentajeComparacion) {
 		(*nodo).homogeneo = 0; //Indicamos que no es uniforme
 	}
 	else {
@@ -459,8 +479,14 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 
 	//DEBUG
 	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
-
-	if (porcentajeFallos < PORCENTAJEPERMITIDO) {
+	int porcentajeComparacion;
+	if (modoDivision) {
+		porcentajeComparacion = PORCENTAJEDIVISION;
+	}
+	else {
+		porcentajeComparacion = PORCENTAJEFUSION;
+	}
+	if (porcentajeFallos < porcentajeComparacion) {
 		if (nodo2->color != -1 && nodo1->color != -1) { //Los dos nodos tienen colores
 			//Se usa el del nodo1 y el del nodo2 se aniada al vector de colores disponibles
 			coloresDisponibles.push_back(nodo2->color);
@@ -548,10 +574,18 @@ void separacionFondo() {
 }
 
 int calcularFallos(region* nodo, int media) {
+	int rangoComparacion;
+	if (modoDivision) {
+		rangoComparacion = RANGOFALLODIVISION;
+	}
+	else {
+		rangoComparacion = RANGOFALLOFUSION;
+	}
+
 	int fallos = 0;
 	for (int row = (*nodo).mat.FirstRow(); row <= (*nodo).mat.LastRow(); row++) {
 		for (int col = (*nodo).mat.FirstCol(); col <= (*nodo).mat.LastCol(); col++) {
-			if ((*nodo).mat(row, col) <= (media - RANGOFALLO) || (*nodo).mat(row, col) >= (media + RANGOFALLO)) {
+			if ((*nodo).mat(row, col) <= (media - rangoComparacion) || (*nodo).mat(row, col) >= (media + rangoComparacion)) {
 				fallos++;
 			}
 		}
