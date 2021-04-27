@@ -36,10 +36,11 @@ int nNodo = 0;
 int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo "uniforme"
 int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
 int LIMITE = 1; //Limite para la division de pixeles
-int INCREMENTO = 10; //
-int COLOR = INCREMENTO;
+int COLOR = 0;
 int FACTORDIVISION = 1;
 int LIMITEMEGAFUSION = 100;
+vector<int> coloresDisponibles;
+bool mega = false;
 C_Image preview;
 C_Image salidaMega;
 
@@ -94,17 +95,23 @@ int main(int argc, char** argv)
 		getline(cin, respuesta);
 		LIMITE = stoi(respuesta);
 
-		printf("Introduce el incremento para cada color de la salida: ");
+		printf("Desea realizar la separacion de fondo? (S/N): ");
 		getline(cin, respuesta);
-		INCREMENTO = stoi(respuesta);
+		for (auto& c : respuesta) c = toupper(c);
+		if (respuesta == "S" || respuesta == "SI") {
+			mega = true;
 
-		printf("Introduce el factor de division: ");
-		getline(cin, respuesta);
-		FACTORDIVISION = stoi(respuesta);
+			printf("Introduce el factor de division: ");
+			getline(cin, respuesta);
+			FACTORDIVISION = stoi(respuesta);
 
-		printf("Introduce el limite para la mega fusion: ");
-		getline(cin, respuesta);
-		LIMITEMEGAFUSION = stoi(respuesta);
+			printf("Introduce el limite para la mega fusion: ");
+			getline(cin, respuesta);
+			LIMITEMEGAFUSION = stoi(respuesta);
+		}
+
+
+		
 	}
 
 
@@ -130,7 +137,10 @@ int main(int argc, char** argv)
 	preview.palette.Read("PaletaSurtida256.txt");
 	preview.WriteBMP("preview.bmp");
 
-	megaFusion();
+	if (mega) {
+		megaFusion();
+	}
+	printf("Numero de colores utilizados: %i", COLOR);
 	//imagen.WriteBMP("cuadro_exportado.bmp");
 
 }
@@ -310,9 +320,10 @@ void fusionar() {
 
 void prepararRegion(region* nodo){
 	nNodo++;
-	(*nodo).num = nNodo;
-	(*nodo).pixeles = calcularPixeles(nodo);
-	(*nodo).suma = (*nodo).mat.Sum();
+	nodo->num = nNodo;
+	nodo->pixeles = calcularPixeles(nodo);
+	nodo->suma = nodo->mat.Sum();
+	nodo->color = -1;
 }
 
 bool vecinos(region* nodo1, region* nodo2) {
@@ -427,31 +438,38 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 	//DEBUG
 	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", (*nodo).num, pixeles, fallos, porcentajeFallos);
 
-	if (porcentajeFallos > PORCENTAJEPERMITIDO) {
-		//((*nodo).homogeneo = 0; //Indicamos que no es uniforme
-	}
-	else {
-		if (nodo1->subregiones.empty()) {
-			COLOR += INCREMENTO;
-			nodo1->color = COLOR;
-
-			for (int i = nodo1->mat.FirstRow(); i <= nodo1->mat.LastRow(); i++) {
-				for (int j = nodo1->mat.FirstCol(); j <= nodo1->mat.LastCol(); j++) {
-					preview(i, j) = nodo1->color;
-				}
+	if (porcentajeFallos < PORCENTAJEPERMITIDO) {
+		if (nodo2->color != -1 && nodo1->color != -1) { //Los dos nodos tienen colores
+			//Se usa el del nodo1 y el del nodo2 se aniada al vector de colores disponibles
+			coloresDisponibles.push_back(nodo2->color);
+		}else if(nodo2->color != -1 && nodo1->color == -1){ //El nodo2 tiene un color pero el nodo1 no
+			//Se coge el color del nodo2
+			nodo1->color = nodo2->color;
+		}else if (nodo1->color == -1 && nodo2->color == -1) { //Si los dos no tienen colores
+			//Comprobamos si hay colores disponibles
+			if (!coloresDisponibles.empty()) { //Si hay un color disponible lo cogemos y lo eliminamos del vector
+				nodo1->color = coloresDisponibles[0];
+				coloresDisponibles.erase(std::remove(coloresDisponibles.begin(), coloresDisponibles.end(), coloresDisponibles[0]), coloresDisponibles.end());
+			}
+			else { //Si no se cumple ninguna aniadimos un color nuevo
+				COLOR += 1;
+				nodo1->color = COLOR;
 			}
 		}
+
 		(*nodo1).subregiones.push_back(nodo2);
 		(*nodo1).pixeles += (*nodo2).pixeles;
 		(*nodo1).suma += (*nodo2).suma;
 
-		
-		
 		for (int i = 0; i < (*nodo2).subregiones.size(); i++) {
 			(*nodo1).subregiones.push_back((*nodo2).subregiones[i]);
 		}
 
-		
+		for (int i = nodo1->mat.FirstRow(); i <= nodo1->mat.LastRow(); i++) {
+			for (int j = nodo1->mat.FirstCol(); j <= nodo1->mat.LastCol(); j++) {
+				preview(i, j) = nodo1->color;
+			}
+		}
 
 		for (int k = 0; k < nodo1->subregiones.size(); k++) {
 			for (int i = nodo1->subregiones[k]->mat.FirstRow(); i <= nodo1->subregiones[k]->mat.LastRow(); i++) {
