@@ -4,20 +4,19 @@
 int Test(int argc, char **argv);
 
 struct region {
-	vector<region*> subregiones;
-	C_Matrix mat;
-	int homogeneo = -1;
+	vector<region*> subregiones; //Vector donde se incluyen las regiones al unir nodos
+	C_Matrix mat; //Matriz de instensidades
+	int num = -1; //Id de la region
+	int pixeles; //Total de pixeles (incluye los de las subregiones)
+	int suma; //Suma de las instensidades de los pixeles (incluye los de las subregiones)
+	bool disponible = true; //Indica si una region esta disponible para fusionarse con otra
+	int color = -1; //Indica el color de una region (se asigna en la fusion)
+	int homogeneo = -1; //Indica si una region cumple el criterio de homogenidad 
 	/*	0 - no cumple el criterio
 	*	1 - cumple el criterio
 	*	-1 - no se ha comprobado
 	*/
-	int num = -1;
-	int pixeles;
-	int suma;
-	bool disponible = true;
-	int color;
 };
-vector<region*> regiones;
 
 void histograma(C_Image* imagen);
 void inverso(C_Image* imagen);
@@ -30,19 +29,20 @@ int calcularPixeles(region* nodo);
 void prepararRegion(region* nodo);
 int calcularFallos(region* nodo, int media);
 void fusionar();
-void megaFusion();
+void separacionFondo();
 
 int nNodo = 0;
-int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo "uniforme"
-int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo "uniforme"
-int LIMITE = 1; //Limite para la division de pixeles
 int COLOR = 0;
-int FACTORDIVISION = 1;
-int LIMITEMEGAFUSION = 100;
-vector<int> coloresDisponibles;
-bool mega = false;
-C_Image preview;
-C_Image salidaMega;
+int PORCENTAJEPERMITIDO = 5; //Porcentaje de fallos permitido en el metodo uniforme()
+int RANGOFALLO = 10; //Se usara para establecer el rango permitido en el metodo uniforme()
+int LIMITE = 1; //Limite para la division de pixeles
+int FACTORDIVISION = 1; //Limite para la comprobacion en el metodo megaFusion
+int LIMITESEPARACIONFONDO = 100; 
+bool separacionFondoElegida = false;
+vector<int> coloresDisponibles; //Vector en el que se guardan los colores que se han dejado de usar para poder reutilizarlos mas tarde
+vector<region*> regiones; //Vector en el que guardamos todas las regiones homogeneas
+C_Image salidaSegmentacion;
+C_Image salidaSeparacionFondo;
 
 //DEBUG
 void dividirSimple(region* nodo);
@@ -52,12 +52,11 @@ int main(int argc, char** argv)
 {
 	//return Test(argc, argv);
 
-	//Obtenemos imagen
+	//Proceso de toma de datos
 	C_Image imagen;
 	C_Image::IndexT row, col;
 
 	string respuesta;
-
 	while (true) {
 		try
 		{
@@ -74,10 +73,7 @@ int main(int argc, char** argv)
 		
 	}
 	
-
-	
-
-	printf("Desea modificar las variables? (S/N): ");
+	printf("Desea modificar las variables para la SEGMENTACION? (S/N): ");
 	getline(cin, respuesta);
 
 	for (auto& c : respuesta) c = toupper(c);
@@ -93,33 +89,36 @@ int main(int argc, char** argv)
 
 		printf("Introduce el limite para la division de nodos: ");
 		getline(cin, respuesta);
-		LIMITE = stoi(respuesta);
+		LIMITE = stoi(respuesta);	
+	}
 
-		printf("Desea realizar la separacion de fondo? (S/N): ");
+	printf("Desea realizar la SEPARACION DE FONDO? (S/N): ");
+	getline(cin, respuesta);
+	for (auto& c : respuesta) c = toupper(c);
+
+	if (respuesta == "S" || respuesta == "SI") {
+		separacionFondoElegida = true;
+
+		printf("Desea modificar las variables para la SEPARACION DE FONDO? (S/N): ");
 		getline(cin, respuesta);
-		for (auto& c : respuesta) c = toupper(c);
-		if (respuesta == "S" || respuesta == "SI") {
-			mega = true;
 
-			printf("Introduce el factor de division: ");
+		for (auto& c : respuesta) c = toupper(c);
+
+		if (respuesta == "S" || respuesta == "SI") {
+			printf("Introduce el factor de division para la separacion de fondo: ");
 			getline(cin, respuesta);
 			FACTORDIVISION = stoi(respuesta);
 
-			printf("Introduce el limite para la mega fusion: ");
+			printf("Introduce el limite para la separacion de fondo: ");
 			getline(cin, respuesta);
-			LIMITEMEGAFUSION = stoi(respuesta);
+			LIMITESEPARACIONFONDO = stoi(respuesta);
 		}
-
-
-		
 	}
 
-
-
-	preview = imagen;
-	salidaMega = imagen;
-	salidaMega.SetValue(255);
-	preview.SetValue(0);
+	salidaSegmentacion = imagen;
+	salidaSeparacionFondo = imagen;
+	salidaSeparacionFondo.SetValue(255);
+	salidaSegmentacion.SetValue(0);
 
 	//histograma(&imagen);
 	//inverso(&imagen);
@@ -134,11 +133,11 @@ int main(int argc, char** argv)
 	//dividirSimple(&raiz);
 
 	fusionar();
-	preview.palette.Read("PaletaSurtida256.txt");
-	preview.WriteBMP("preview.bmp");
+	salidaSegmentacion.palette.Read("PaletaSurtida256.txt");
+	salidaSegmentacion.WriteBMP("salidaSegmentacion.bmp");
 
-	if (mega) {
-		megaFusion();
+	if (separacionFondoElegida) {
+		separacionFondo();
 	}
 	printf("Numero de colores utilizados: %i", COLOR);
 	//imagen.WriteBMP("cuadro_exportado.bmp");
@@ -323,7 +322,6 @@ void prepararRegion(region* nodo){
 	nodo->num = nNodo;
 	nodo->pixeles = calcularPixeles(nodo);
 	nodo->suma = nodo->mat.Sum();
-	nodo->color = -1;
 }
 
 bool vecinos(region* nodo1, region* nodo2) {
@@ -467,14 +465,14 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 
 		for (int i = nodo1->mat.FirstRow(); i <= nodo1->mat.LastRow(); i++) {
 			for (int j = nodo1->mat.FirstCol(); j <= nodo1->mat.LastCol(); j++) {
-				preview(i, j) = nodo1->color;
+				salidaSegmentacion(i, j) = nodo1->color;
 			}
 		}
 
 		for (int k = 0; k < nodo1->subregiones.size(); k++) {
 			for (int i = nodo1->subregiones[k]->mat.FirstRow(); i <= nodo1->subregiones[k]->mat.LastRow(); i++) {
 				for (int j = nodo1->subregiones[k]->mat.FirstCol(); j <= nodo1->subregiones[k]->mat.LastCol(); j++) {
-					preview(i, j) = nodo1->color;
+					salidaSegmentacion(i, j) = nodo1->color;
 				}
 			}
 		}
@@ -488,12 +486,12 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 	}
 }
 
-void megaFusion() {
+void separacionFondo() {
 	int max = regiones[0]->pixeles;
 	int indice = 0;
 	bool actualizado;
 
-	for(int g = 0; g < LIMITEMEGAFUSION; g++ ){
+	for(int g = 0; g < LIMITESEPARACIONFONDO; g++ ){
 		actualizado = false;
 		printf("Max entrada: %i\n", max);
 		for (int i = 0; i < regiones.size(); i++) {
@@ -503,8 +501,8 @@ void megaFusion() {
 				actualizado = true;
 			}
 		}
-		if (!actualizado && LIMITEMEGAFUSION == 100) {
-			printf("BREAK MEGAFUSION");
+		if (!actualizado && LIMITESEPARACIONFONDO == 100) {
+			printf("BREAK SEPARACIONFONDO");
 			break;
 		}
 		printf("Max escogido; %i\n", max);
@@ -514,7 +512,7 @@ void megaFusion() {
 
 		for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
 			for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
-				salidaMega(i, j) = 0;
+				salidaSeparacionFondo(i, j) = 0;
 			}
 		}
 
@@ -522,7 +520,7 @@ void megaFusion() {
 		for (int k = 0; k < regiones[indice]->subregiones.size(); k++) {
 			for (int i = regiones[indice]->subregiones[k]->mat.FirstRow(); i <= regiones[indice]->subregiones[k]->mat.LastRow(); i++) {
 				for (int j = regiones[indice]->subregiones[k]->mat.FirstCol(); j <= regiones[indice]->subregiones[k]->mat.LastCol(); j++) {
-					salidaMega(i, j) = 0;
+					salidaSeparacionFondo(i, j) = 0;
 				}
 			}
 		}
@@ -531,7 +529,7 @@ void megaFusion() {
 
 	}
 
-	salidaMega.WriteBMP("salidaMega.bmp");
+	salidaSeparacionFondo.WriteBMP("salidaSeparacionFondo.bmp");
 
 }
 
