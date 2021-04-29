@@ -381,38 +381,38 @@ void prepararRegion(region* nodo) {
 */
 bool vecinos(region* nodo1, region* nodo2) {
 
-	int izq1 = nodo1->mat.FirstCol();
-	int der1 = nodo1->mat.LastCol();
-	int izq2 = nodo2->mat.FirstCol();
-	int der2 = nodo2->mat.LastCol();
+	int izq1 = nodo1->mat.FirstCol(); 
+	int der1 = nodo1->mat.LastCol(); 
+	int izq2 = nodo2->mat.FirstCol(); 
+	int der2 = nodo2->mat.LastCol(); 
 
-	int arriba1 = nodo1->mat.FirstRow();
+	int arriba1 = nodo1->mat.FirstRow(); 
 	int abajo1 = nodo1->mat.LastRow();
 	int arriba2 = nodo2->mat.FirstRow();
 	int abajo2 = nodo2->mat.LastRow();
 
 
-	if (abs(izq1 - der2) == 1 || abs(der1 - izq2) == 1) { //Comprobamos si las regiones son vecinos horizontales
+	if (abs(izq1 - der2) == 1 || abs(der1 - izq2) == 1) { //Comprobamos si las regiones tienen columnas adyacentes
 
-		//Situaciones 1, 2, 4
-		if (arriba1 <= arriba2 && abajo1 >= arriba2) { //que sea "<" significa que esta por encima y ">" que esta por debajo
+		//Comprobamos si alguna fila del nodo2 esta dentro del rango de filas del nodo1
+		if (arriba1 <= arriba2 && abajo1 >= arriba2) { 
 			return true;
 		}
 
-		//Situaciones 3, 5
+		//Comprobamos si alguna fila del nodo1 esta dentro del rango de filas del nodo2
 		if (arriba2 <= arriba1 && abajo2 >= arriba1) {
 			return true;
 		}
 	}
 
-	if (abs(arriba1 - abajo2) == 1 || abs(abajo1 - arriba2) == 1) { //Comprobamos si las regiones son vecinos verticales
-		//situaciones 1, 2, 4
+	if (abs(arriba1 - abajo2) == 1 || abs(abajo1 - arriba2) == 1) { //Comprobamos si las regiones tienen filas adyacentes
+		
+		//Comprobamos si alguna columna del nodo2 esta dentro del rango de columnas del nodo1
 		if (izq1 <= izq2 && izq2 <= der1) {
 			return true;
 		}
 
-		//Situaciones 4, 5
-
+		//Comprobamos si alguna columna del nodo1 esta dentro del rango de columnas del nodo2
 		if (izq2 <= izq1 && izq1 <= der2) {
 			return true;
 		}
@@ -421,14 +421,14 @@ bool vecinos(region* nodo1, region* nodo2) {
 	return false;
 }
 
-
+/*DEBUG:Metodo que exporta el nodo que se le pasa
+*/
 void exportar(region* nodo) {
 	C_Image salida(nodo->mat);
 	C_Image::IndexT row, col;
 	string nombre = std::to_string(nodo->num) + ".bmp";
 
 	salida.WriteBMP(nombre.c_str());
-
 }
 
 /*Metodo que devuelve el numero de pixeles de un nodo
@@ -437,7 +437,9 @@ int calcularPixeles(region* nodo) {
 	return (nodo->mat.LastRow() - nodo->mat.FirstRow() + 1) * (nodo->mat.LastCol() - nodo->mat.FirstCol() + 1);
 }
 
-//Comprueba si una region es de color más o menos uniforme dentro de un rango
+/*Metodo que comprueba si un nodo cumple el criterio de homogenidad establecido, 
+utilizando la media de su matriz y calculando el porcentaje de pixeles que estan fuera del rango permitido
+*/
 void uniforme(region* nodo) {
 	int media = nodo->mat.Mean();
 	int fallos = 0;
@@ -447,86 +449,47 @@ void uniforme(region* nodo) {
 
 	int porcentajeFallos = ((double)fallos / pixeles) * 100;
 
-	//DEBUG
-	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", nodo->num, pixeles, fallos, porcentajeFallos);
-	int porcentajeComparacion;
-	if (modoDivision) {
-		porcentajeComparacion = PORCENTAJEDIVISION;
-	}
-	else {
-		porcentajeComparacion = PORCENTAJEFUSION;
-	}
+	//DEBUG: muestra el resultado de la comprobacion
+	printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", nodo->num, pixeles, fallos, porcentajeFallos);
 
-	if (porcentajeFallos > porcentajeComparacion) {
-		nodo->homogeneo = 0; //Indicamos que no es uniforme
+
+	if (porcentajeFallos > PORCENTAJEDIVISION) { //No cumple el criterio
+		nodo->homogeneo = 0; 
 	}
-	else {
-		//Si el nodo es homogeneo lo añadimos al vector de regiones homogeneas
-		nodo->homogeneo = 1; //Indicamos que es uniforme
+	else { //Cumple el criterio
+		nodo->homogeneo = 1; 
 		regiones.push_back(nodo);
-
-
-		/*
-		for (int i = nodo->mat.FirstRow(); i <= nodo->mat.LastRow(); i++) {
-			for (int j = nodo->mat.FirstCol(); j <= nodo->mat.LastCol(); j++) {
-				preview(i, j) = nodo->num;
-			}
-		}*/
 	}
 }
 
 
-
+/*Metodo que comprueba si la union de dos nodos y sus subregiones cumplen el criterio de homogenidad
+*/
 void parejaUniforme(region* nodo1, region* nodo2) {
 
 
-	//Calculamos la media de las dos regiones
-
+	//Calculamos la media de las dos regiones juntas (incluye las subregiones tambien)
 	int media = (nodo1->suma + nodo2->suma) / (nodo1->pixeles + nodo2->pixeles);
+	int pixeles = nodo1->pixeles + nodo2->pixeles;
 	int fallos = 0;
 
+	//Calculamos los fallos del nodo1 y sus subregiones
 	fallos += calcularFallos(nodo1, media);
 	for (int i = 0; i < nodo1->subregiones.size(); i++) {
 		fallos += calcularFallos(nodo1->subregiones[i], media);
 	}
 
+	//Calculamos los fallos del nodo2 y sus subregiones
 	fallos += calcularFallos(nodo2, media);
 	for (int i = 0; i < nodo2->subregiones.size(); i++) {
 		fallos += calcularFallos(nodo2->subregiones[i], media);
 	}
 
-	int porcentajeFallos = ((double)fallos / (nodo1->pixeles + nodo2->pixeles)) * 100;
+	int porcentajeFallos = ((double)fallos / pixeles) * 100;
 
-	//DEBUG
-	//printf("UNIFORME Nodo %i Pixeles = %i Fallos = %i Porcentaje = %i\n", nodo->num, pixeles, fallos, porcentajeFallos);
-	int porcentajeComparacion;
-	if (modoDivision) {
-		porcentajeComparacion = PORCENTAJEDIVISION;
-	}
-	else {
-		porcentajeComparacion = PORCENTAJEFUSION;
-	}
-	if (porcentajeFallos < porcentajeComparacion) {
-		if (nodo2->color != -1 && nodo1->color != -1) { //Los dos nodos tienen colores
-			//Se usa el del nodo1 y el del nodo2 se aniada al vector de colores disponibles
-			coloresDisponibles.push_back(nodo2->color);
-		}
-		else if (nodo2->color != -1 && nodo1->color == -1) { //El nodo2 tiene un color pero el nodo1 no
-		   //Se coge el color del nodo2
-			nodo1->color = nodo2->color;
-		}
-		else if (nodo1->color == -1 && nodo2->color == -1) { //Si los dos no tienen colores
-		   //Comprobamos si hay colores disponibles
-			if (!coloresDisponibles.empty()) { //Si hay un color disponible lo cogemos y lo eliminamos del vector
-				nodo1->color = coloresDisponibles[0];
-				coloresDisponibles.erase(std::remove(coloresDisponibles.begin(), coloresDisponibles.end(), coloresDisponibles[0]), coloresDisponibles.end());
-			}
-			else { //Si no se cumple ninguna aniadimos un color nuevo
-				COLOR += 1;
-				nodo1->color = COLOR;
-			}
-		}
+	if (porcentajeFallos < PORCENTAJEFUSION) { //Cumple el criterio
 
+		//Fusionamos el nodo2 al nodo1
 		nodo1->subregiones.push_back(nodo2);
 		nodo1->pixeles += nodo2->pixeles;
 		nodo1->suma += nodo2->suma;
@@ -535,24 +498,23 @@ void parejaUniforme(region* nodo1, region* nodo2) {
 			nodo1->subregiones.push_back(nodo2->subregiones[i]);
 		}
 
-	
-
-
-		nodo2->disponible = false;
-		//regiones.erase(std::remove(regiones.begin(), regiones.end(), nodo2), regiones.end());
-
-		//DEBUG
-		//printf("Se puede unir el nodo %i con el nodo %i\n", nodo1->num, nodo2->num);
+		//Marcamos el nodo2 como no disponible para que no se pueda fusionar con otro nodo
+		nodo2->disponible = false; 
 	}
 }
 
+/*Metodo que separa el fondo de una imagen,
+* solo funciona hay una diferencia de tamanio considerable entre las regiones del fondo y las del objeto
+*/
 void separacionFondo() {
+	//Buscamos la region con una mayor numero de pixeles
 	int max = regiones[0]->pixeles;
 	int indice = 0;
-	bool actualizado;
+	bool actualizado; //indica si se ha actualizado el max en la iteracion actual
 
 	for (int g = 0; g < LIMITESEPARACIONFONDO; g++) {
 		actualizado = false;
+		//DEBUG: indica el max con el que se ha entrado en el bucle
 		printf("Max entrada: %i\n", max);
 		for (int i = 0; i < regiones.size(); i++) {
 			if (regiones[i]->pixeles > max && regiones[i]->disponible) {
@@ -561,21 +523,26 @@ void separacionFondo() {
 				actualizado = true;
 			}
 		}
+
+		//DEBUG: indica cuando no se ha encontrado un maximo nuevo
 		if (!actualizado && LIMITESEPARACIONFONDO == 100) {
 			printf("BREAK SEPARACIONFONDO");
 			break;
 		}
+
+		//DEBUG: indica el max con el que se ha salido del bucle
 		printf("Max escogido; %i\n", max);
 
-		regiones[indice]->disponible = false;
-		max = max / FACTORDIVISION;
+		regiones[indice]->disponible = false; //Indicamos la region como no disponible para no tenerla en cuenta para un maximo nuevo
+		max = max / FACTORDIVISION; //Actualizamos el maximo para que en la siguiente iteracion busque uno mayor que dividido
 
+
+		//Actualizamos el valor correspondiente a la region en la matriz de la imagen de salida
 		for (int i = regiones[indice]->mat.FirstRow(); i <= regiones[indice]->mat.LastRow(); i++) {
 			for (int j = regiones[indice]->mat.FirstCol(); j <= regiones[indice]->mat.LastCol(); j++) {
 				salidaSeparacionFondo(i, j) = 0;
 			}
 		}
-
 
 		for (int k = 0; k < regiones[indice]->subregiones.size(); k++) {
 			for (int i = regiones[indice]->subregiones[k]->mat.FirstRow(); i <= regiones[indice]->subregiones[k]->mat.LastRow(); i++) {
@@ -585,15 +552,15 @@ void separacionFondo() {
 			}
 		}
 
-
-
 	}
 
 	salidaSeparacionFondo.WriteBMP("salidaSeparacionFondo.bmp");
-
 }
 
+/*Metodo que calcula los fallos de un nodo comprobando si los pixeles estan dentro de un rango establecido
+*/
 int calcularFallos(region* nodo, int media) {
+	//Dependiendo de si los estamos calculando para la fusion o la division debemos usar valores diferentes
 	int rangoComparacion;
 	if (modoDivision) {
 		rangoComparacion = RANGOFALLODIVISION;
@@ -602,10 +569,13 @@ int calcularFallos(region* nodo, int media) {
 		rangoComparacion = RANGOFALLOFUSION;
 	}
 
+	int rangoSuperior = media + rangoComparacion;
+	int rangoInferior = abs(media - rangoComparacion);
+
 	int fallos = 0;
 	for (int row = nodo->mat.FirstRow(); row <= nodo->mat.LastRow(); row++) {
 		for (int col = nodo->mat.FirstCol(); col <= nodo->mat.LastCol(); col++) {
-			if (nodo->mat(row, col) <= abs(media - rangoComparacion) || nodo->mat(row, col) >= (media + rangoComparacion)) {
+			if (nodo->mat(row, col) <= rangoInferior || nodo->mat(row, col) >= rangoSuperior) {
 				fallos++;
 			}
 		}
@@ -651,7 +621,8 @@ void inverso(C_Image* imagen) {
 			(*imagen)(row, col) = 255 - (*imagen)(row, col);
 }
 
-//DEBUG
+/*DEBUG: metodo que divide nodos sin tener en cuenta el criterio de homogenidad
+*/
 void dividirSimple(region* nodo) {
 	int limite = 3;
 	//int limite = 5; //4X4
