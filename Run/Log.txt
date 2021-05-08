@@ -218,3 +218,40 @@ TDI W (C_Image_BMP,  253) Palette size must be 65536
 TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
 TDI W (C_Image_BMP,  253) Palette size must be 65536
 TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI E (C_Image_BMP,  160) File doesn't exist : tullip.bmp
+TDI E (C_Matrix,  246) Index out of matrix boundaries
+TDI E (C_Matrix,  246) Index out of matrix boundaries
+TDI E (C_Image_BMP,  182) BMP option erroneous or not implemented: NUM BITS PER PLANE : 24
+TDI E (C_Image_BMP,  182) BMP option erroneous or not implemented: NUM BITS PER PLANE : 24
+TDI E (C_Image_BMP,  160) File doesn't exist : patat3.bmp
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI E (C_Image_BMP,  160) File doesn't exist : gato.bmo
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
+TDI W (C_Image_BMP,  253) Palette size must be 65536
+TDI W (C_Matrix_IO,  350) No. bits/pixel not standard : 16
